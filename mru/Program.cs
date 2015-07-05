@@ -18,19 +18,36 @@ namespace Bespoke.Utils.Security
             {
                 AppDomain domainSecurityHelper = CreateAppDomain(configurationFile, null);
 
-                var mh = new MembershipHelper {UserName = userName, Password = password, Email = email};
+                var mh = new MembershipHelper { UserName = userName, Password = password, Email = email };
 
                 domainSecurityHelper.DoCallBack(mh.AddUser);
 
 
                 foreach (string r in roles)
                 {
-                    var rh = new RolesHelpher {UserName = userName, Role = r};
+                    var rh = new RolesHelpher { UserName = userName, Role = r };
                     domainSecurityHelper.DoCallBack(rh.AddRole);
                     domainSecurityHelper.DoCallBack(rh.AssignUserToRole);
 
                 }
 
+
+                AppDomain.Unload(domainSecurityHelper);
+                return;
+
+            }
+            //
+            // add roles to existing users
+            if (ParseArguements(args, roles, out userName, out configurationFile))
+            {
+                AppDomain domainSecurityHelper = CreateAppDomain(configurationFile, null);
+                foreach (string r in roles)
+                {
+                    var rh = new RolesHelpher { UserName = userName, Role = r };
+                    domainSecurityHelper.DoCallBack(rh.AddRole);
+                    domainSecurityHelper.DoCallBack(rh.AssignUserToRole);
+
+                }
 
                 AppDomain.Unload(domainSecurityHelper);
                 return;
@@ -44,7 +61,7 @@ namespace Bespoke.Utils.Security
                 AppDomain domainSecurityHelper = CreateAppDomain(configurationFile, null);
                 foreach (string r in roles)
                 {
-                    var rh = new RolesHelpher {Role = r};
+                    var rh = new RolesHelpher { Role = r };
                     domainSecurityHelper.DoCallBack(rh.AddRole);
 
                 }
@@ -65,10 +82,10 @@ namespace Bespoke.Utils.Security
         public static AppDomain CreateAppDomain(string configurationFile, string assemblyPath)
         {
             string appBase = assemblyPath ?? new Uri(
-// ReSharper disable AssignNullToNotNullAttribute
+                // ReSharper disable AssignNullToNotNullAttribute
                 Path.GetDirectoryName(
                 Path.GetFullPath(Assembly.GetEntryAssembly().Location))).AbsoluteUri;
-// ReSharper restore AssignNullToNotNullAttribute
+            // ReSharper restore AssignNullToNotNullAttribute
 
 
             // set up
@@ -87,11 +104,12 @@ namespace Bespoke.Utils.Security
 
         private static void Usage()
         {
-            const ConsoleColor yellow = ConsoleColor.Yellow;
+            const ConsoleColor YELLOW = ConsoleColor.Yellow;
             ConsoleColor defaultColor = Console.ForegroundColor;
 
-            Console.ForegroundColor = yellow;
+            Console.ForegroundColor = YELLOW;
             Console.WriteLine("Usage :\t\tTo add user \r\n\t\t mru -u <username> -p <password> -e <email> [-r] <rolename> -c <configurationFile>\r\n");
+            Console.WriteLine("Usage :\t\tTo add user to a role \r\n\t\t mru -r <rolename> -u <username> -c <configurationFile>\r\n");
             Console.WriteLine("Usage :\t\tTo add role \r\n\t\t mru -r <rolename> -c <configurationFile>\r\n");
 
             Console.ForegroundColor = defaultColor;
@@ -110,13 +128,11 @@ namespace Bespoke.Utils.Security
                 switch (args[i])
                 {
                     case "-r":
-                        roles.Add(args[i +1]);
+                        roles.Add(args[i + 1]);
                         break;
                     case "-c":
                         string config = args[i + 1];
                         configurationFile = Path.IsPathRooted(config) ? config : Path.Combine(Environment.CurrentDirectory, config);
-                        break;
-                    default:
                         break;
                 }
             }
@@ -164,6 +180,38 @@ namespace Bespoke.Utils.Security
             return !string.IsNullOrEmpty(password)
                 && !string.IsNullOrEmpty(userName)
                 && !string.IsNullOrEmpty(email)
+                && !string.IsNullOrEmpty(configurationFile)
+                && File.Exists(configurationFile);
+        }
+
+        static bool ParseArguements(string[] args, List<string> roles, out string userName, out string configurationFile)
+        {
+            userName = string.Empty;
+            if (null == roles) roles = new List<string>();
+            configurationFile = string.Empty;
+
+            for (int i = 0; i < args.Length; i++)
+            {
+                switch (args[i])
+                {
+                    case "-u":
+                        userName = args[i + 1];
+                        break;
+                    case "-r":
+                        roles.Add(args[i + 1]);
+                        break;
+                    case "-c":
+                        string config = args[i + 1];
+                        configurationFile = Path.IsPathRooted(config) ? config :
+                                Path.Combine(Environment.CurrentDirectory, config);
+
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            return !string.IsNullOrEmpty(userName)
                 && !string.IsNullOrEmpty(configurationFile)
                 && File.Exists(configurationFile);
         }

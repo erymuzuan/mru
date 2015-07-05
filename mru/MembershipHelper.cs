@@ -33,6 +33,7 @@ namespace Bespoke.Utils.Security
 
         }
 
+
         internal void SomeMethod()
         {
             Console.WriteLine("Conn : {0}", ConfigurationManager.ConnectionStrings[0].ConnectionString);
