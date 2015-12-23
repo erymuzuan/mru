@@ -1,19 +1,17 @@
-using System;
-using Microsoft.Build.Framework;
-using Microsoft.Build.Utilities;
+
 
 namespace Bespoke.Utils.Security
 {
 
-    public class AspAddRole : Task
+    public class AspAddRole
     {
         public string TaskAssemblyDirectory { get; set; }
 
 
-        public override bool Execute()
+        public bool Execute()
         {
-           AppDomain secDomain =  Program.CreateAppDomain(ConfigurationFile, TaskAssemblyDirectory);
-           foreach (string r in Roles)
+           var secDomain =  Program.CreateAppDomain(ConfigurationFile, TaskAssemblyDirectory);
+           foreach (var r in Roles)
            {
                var rh = new RolesHelpher {Role = r};
                secDomain.DoCallBack(rh.AddRole);
@@ -21,11 +19,8 @@ namespace Bespoke.Utils.Security
 
            return true;
         }
-
-        [Required]
+        
         public string ConfigurationFile { get; set; }
-
-        [Required]
         public string[] Roles { get; set; }
     }
 
